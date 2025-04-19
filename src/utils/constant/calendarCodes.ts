@@ -1,0 +1,18 @@
+export const calendarCodes: { bg: string; text: string }[] = [
+  { bg: "#FBEBDA", text: "#E78823" },
+  { bg: "#E9ECE9", text: "#7C8E7B" },
+  { bg: "#E7E7EE", text: "#6D709C" },
+  { bg: "#D2F9FB", text: "#189397" },
+  { bg: "#D9E7F4", text: "#3273B8" },
+  { bg: "#F1D9DB", text: "#AC3640" }, 
+  { bg: "#E4E6E7", text: "#69747A" },
+  { bg: "#DAF2EC", text: "#3AAF93" },
+  { bg: "#FACFE4", text: "#E30067" },
+  { bg: "#EBE1E1", text: "#8A5859" },
+  { bg: "#E8E7E2", text: "#807963" },
+  { bg: "#E5CBFE", text: "#7300F7" },
+  { bg: "#EDDDDC", text: "#9B4491" },
+  { bg: "#EFE5DC", text: "#A26C45" },
+  { bg: "#CEF1FF", text: "#19AFFF" },
+  { bg: "#FCDDCF", text: "#F04812" },
+];

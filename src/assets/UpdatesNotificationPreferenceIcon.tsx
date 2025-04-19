@@ -1,0 +1,30 @@
+import React from "react";
+
+const UpdatesNotificationPreferenceIcon = ({
+  size = 20, // Default width
+  color = "#667085", // Default stroke color
+}: {
+  size?: number; // Width of the icon
+  color?: string; // Stroke color
+}) => {
+  const height = (size * 15) / 14; // Maintain aspect ratio of the original design
+  return (
+    <svg
+      width={size}
+      height={height}
+      viewBox="0 0 14 15"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M4.33333 5.83333H7M4.33333 8.16667H9M7 13.5C10.3137 13.5 13 10.8137 13 7.5C13 4.18629 10.3137 1.5 7 1.5C3.68629 1.5 1 4.18629 1 7.5C1 8.2981 1.15582 9.0598 1.43871 9.75634C1.49285 9.88965 1.51992 9.95631 1.532 10.0102C1.54381 10.0629 1.54813 10.1019 1.54814 10.1559C1.54814 10.2111 1.53812 10.2713 1.51807 10.3916L1.12275 12.7635C1.08135 13.0119 1.06065 13.1361 1.09917 13.2259C1.13289 13.3045 1.19552 13.3671 1.27412 13.4008C1.36393 13.4393 1.48812 13.4186 1.73651 13.3772L4.10843 12.9819C4.22872 12.9619 4.28887 12.9519 4.34409 12.9519C4.3981 12.9519 4.43711 12.9562 4.48981 12.968C4.54369 12.9801 4.61035 13.0072 4.74366 13.0613C5.4402 13.3442 6.2019 13.5 7 13.5Z"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
+export default UpdatesNotificationPreferenceIcon;

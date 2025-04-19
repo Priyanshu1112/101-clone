@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/slack/notify",
+      "schedule": "30 18 * * *"
+    },
+    {
+      "path": "/api/slack/update/create",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/slack/update/check",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

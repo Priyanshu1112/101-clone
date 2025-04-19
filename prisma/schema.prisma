@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model LeaveDetail {
+  id            String         @id @default(uuid())
+  name          String
+  description   String
+  type          LeaveType
+  addedOn       String
+  allowanceType AllowanceType?
+  needsApproval Boolean        @default(false)
+  notifyAdmin   Boolean        @default(false)
+  allowance     Int?
+  carryForward  Boolean        @default(false)
+  unlimited     Boolean        @default(false)
+  companyId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leaveRecords  LeaveRecord[]
+}
+
+model Holiday {
+  id         String   @id @default(uuid())
+  calendarId String
+  date       String
+  occasion   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  end        String
+  start      String
+  calendar   Calendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+}
+
+model Calendar {
+  id         String    @id @default(uuid())
+  country    String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  teamId     String?
+  calendarId String
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  team       Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  holiday    Holiday[]
+}
+
+model Company {
+  id                       String        @id @default(uuid())
+  name                     String?       @unique
+  strength                 Int?
+  domain                   String        @unique
+  createdById              String        @unique
+  slackTeamId              String?
+  slackTeamName            String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  slackBirthday            Json?
+  slackNotification        Boolean       @default(false)
+  slackUpcomingHoliday     Json?
+  slackWorkanniversary     Json?
+  dailyLeaveSummary        Json?
+  weeklyLeaveSummary       Json?
+  slackMotivationalMessage Json?
+  calendar                 Calendar[]
+  createdBy                User          @relation("CreatedCompanies", fields: [createdById], references: [id], onDelete: Cascade)
+  leaveDetail              LeaveDetail[]
+  teams                    Team[]
+  update                   Update[]
+  users                    User[]
+}
+
+model User {
+  id                   String           @id @default(uuid())
+  email                String           @unique
+  name                 String
+  gender               Gender?
+  birthday             String?
+  slackId              String?          @unique
+  googleId             String?          @unique
+  companyId            String?
+  role                 Role             @default(Member)
+  colorCode            Int
+  approverId           String?
+  lastSignInProvider   Provider?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  compOff              Int              @default(0)
+  workAnniversary      String?
+  needsOnboarding      Boolean          @default(false)
+  autoDeclineOnHoliday Boolean          @default(false)
+  autoDeclineOnLeave   Boolean          @default(false)
+  googleLeaves         Boolean          @default(false)
+  googleNotification   Boolean          @default(false)
+  createdCompanies     Company?         @relation("CreatedCompanies")
+  approvedLeaves       LeaveRecord[]    @relation("LeavesApproved")
+  leaveRecord          LeaveRecord[]
+  teamUsers            TeamUser[]
+  updateResponse       UpdateResponse[]
+  approver             User?            @relation("UserApprovers", fields: [approverId], references: [id], onDelete: Cascade)
+  approvedUsers        User[]           @relation("UserApprovers")
+  company              Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  notification         Notification[]   @relation("NotificationToUser")
+  update               Update[]         @relation("UpdateToUser")
+}
+
+model LeaveRecord {
+  id            String         @id @default(uuid())
+  status        LeaveStatus    @default(PENDING)
+  start         String
+  startTime     LeaveTime
+  end           String?
+  endTime       LeaveTime?
+  reason        String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String
+  leaveDetailId String
+  approvedById  String?
+  timeStamp     String[]
+  approvedBy    User?          @relation("LeavesApproved", fields: [approvedById], references: [id], onDelete: Cascade)
+  leaveDetail   LeaveDetail    @relation(fields: [leaveDetailId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Notification  Notification[]
+}
+
+model Workday {
+  id          String    @id @default(uuid())
+  name        String
+  workWeek    Int
+  weekOff     WeekDay[]
+  startOfWeek WeekDay
+  teamId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model Team {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  companyId String
+  logo      String
+  calendar  Calendar[]
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  teamUsers TeamUser[]
+  update    Update[]
+  workDay   Workday[]
+}
+
+model TeamUser {
+  teamId    String
+  userId    String
+  role      Role     @default(Member)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  isArchive Boolean  @default(false)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+}
+
+model Update {
+  id             String           @id @default(uuid())
+  questions      String[]
+  teamId         String
+  channelId      String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  time           String
+  companyId      String
+  company        Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  team           Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  updateResponse UpdateResponse[]
+  members        User[]           @relation("UpdateToUser")
+}
+
+model UpdateResponse {
+  id           String               @id @default(uuid())
+  answer       String[]
+  updateId     String
+  status       UpdateResponseStatus @default(Scheduled)
+  userId       String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  timeStamp    String?
+  Notification Notification[]
+  update       Update               @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id               String           @id @default(uuid())
+  type             NotificationType
+  text             String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  title            String
+  isRead           Boolean          @default(false)
+  for              String[]
+  leaveRecordId    String?
+  leaveStatus      LeaveStatus?
+  updateResponseId String?
+  leaveRecord      LeaveRecord?     @relation(fields: [leaveRecordId], references: [id], onDelete: Cascade)
+  updateRecord     UpdateResponse?  @relation(fields: [updateResponseId], references: [id], onDelete: Cascade)
+  users            User[]           @relation("NotificationToUser")
+}
+
+enum LeaveType {
+  Deductible
+  Non_Deductible
+  Mestrual
+  Comp_Off
+}
+
+enum AllowanceType {
+  Monthly
+  Yearly
+}
+
+enum Gender {
+  Male
+  Female
+}
+
+enum LeaveTime {
+  FULL_DAY
+  FIRST_HALF
+  SECOND_HALF
+}
+
+enum LeaveStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum Role {
+  Administrator
+  Lead
+  Member
+  Owner
+}
+
+enum Provider {
+  Google
+  Slack
+}
+
+enum WeekDay {
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
+}
+
+enum UpdateResponseStatus {
+  Complete
+  Incomplete
+  Scheduled
+}
+
+enum NotificationType {
+  Onboard
+  Leave
+  LeaveTomorrow
+  Holiday
+  UpdateReminder
+  CheckInFrequency
+  LeaveToday
+}
