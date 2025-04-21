@@ -49,9 +49,7 @@ export async function POST(request: NextRequest) {
       case "leave_request":
         // Process in background and respond quickly
 
-        processInBackground(
-          async () => await RequestLeave(channel.id, slackUser.id, trigger_id)
-        );
+        await RequestLeave(channel.id, slackUser.id, trigger_id);
         return quickResponse();
 
       case "apply_leave": {
