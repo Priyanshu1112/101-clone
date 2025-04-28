@@ -19,14 +19,26 @@ async function parseRequestBody(request: NextRequest) {
 }
 
 // Background task handler
-async function processInBackground(fn: () => Promise<void>) {
-  try {
-    await fn().catch(console.error);
-  } catch (error) {
-    console.error("Background task failed:", error);
-  }
+// async function processInBackground(fn: () => Promise<void>) {
+//   try {
+//     await fn().catch(console.error);
+//   } catch (error) {
+//     console.error("Background task failed:", error);
+//   }
+// }
+
+function processInBackground(fn: () => Promise<void>) {
+  // Don't await the Promise, truly let it run in background
+  // after the response has been sent
+  setImmediate(() => {
+    fn().catch((error) => {
+      console.error("Background task failed:", error);
+    });
+  });
 }
-const quickResponse = async () => NextResponse.json({});
+
+const quickResponse = async () =>
+  NextResponse.json({ response_action: "clear" });
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,11 +61,12 @@ export async function POST(request: NextRequest) {
       case "leave_request":
         // Process in background and respond quickly
 
-        await RequestLeave(channel.id, slackUser.id, trigger_id);
+        await processInBackground(
+          async () => await RequestLeave(channel.id, slackUser.id, trigger_id)
+        );
         return quickResponse();
 
       case "apply_leave": {
-        console.log("apply leave");
         if (!payload || typeof payload !== "object") {
           return NextResponse.json({
             success: false,
@@ -61,7 +74,7 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        const res = await quickResponse();
+        // const res = await quickResponse();
 
         const { state } = view;
 
@@ -172,15 +185,39 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        await slackClient.views.update({
-          view_id: view.id,
+        // await slackClient.views.update({
+        //   view_id: view.id,
+        //   view: {
+        //     callback_id: "apply_leave",
+        //     type: "modal",
+        //     title: {
+        //       type: "plain_text",
+        //       text: "Processing...",
+        //     },
+        //     blocks: [
+        //       {
+        //         type: "section",
+        //         text: {
+        //           type: "mrkdwn",
+        //           text: ":hourglass_flowing_sand: *Processing your leave application...*\nPlease wait while we process your request.",
+        //         },
+        //       },
+        //     ],
+        //     close: {
+        //       type: "plain_text",
+        //       text: "Close",
+        //     },
+        //   },
+        // });
+
+        const res = NextResponse.json({
+          response_action: "update",
           view: {
-            external_id: view.external_id,
             type: "modal",
             callback_id: "apply_leave",
             title: {
               type: "plain_text",
-              text: "Processing...", // Short title under 24 chars
+              text: "Processing...",
             },
             blocks: [
               {
@@ -191,11 +228,15 @@ export async function POST(request: NextRequest) {
                 },
               },
             ],
+            close: {
+              type: "plain_text",
+              text: "Cancel",
+            },
           },
         });
 
         // Process the leave application in background
-        processInBackground(
+        await processInBackground(
           async () =>
             await ApplyLeave(
               view,
@@ -208,21 +249,6 @@ export async function POST(request: NextRequest) {
               reason
             )
         );
-
-        await slackClient.chat.postEphemeral({
-          channel: view.external_id.split("_")[0],
-          user: payload.user.id,
-          text: ":hourglass_flowing_sand: *Processing your leave application...*\nPlease wait while we process your request.",
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: ":hourglass_flowing_sand: *Processing your leave application...*\nPlease wait while we process your request.",
-              },
-            },
-          ],
-        });
 
         return res;
       }
